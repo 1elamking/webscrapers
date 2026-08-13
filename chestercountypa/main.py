@@ -39,6 +39,19 @@ end_date   = today.strftime("%-m/%-d/%Y")
 
 s = requests.Session()
 s.proxies = {"http": PROXY, "https": PROXY}
+# Tüm session isteklerine otomatik retry (geçici proxy/522 blip'lerine karşı)
+_orig_request = s.request
+def _retrying(method, url, **kw):
+    kw.setdefault("timeout", 120)
+    for a in range(1, 6):
+        try:
+            return _orig_request(method, url, **kw)
+        except (requests.exceptions.ProxyError, requests.exceptions.ConnectionError) as e:
+            print(f"  proxy/bağlantı hatası (deneme {a}/5): {type(e).__name__}")
+            time.sleep(6)
+    raise SystemExit("Proxy sürekli düştü.")
+s.request = _retrying
+
 s.headers.update({
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
     "X-Requested-With": "XMLHttpRequest",
