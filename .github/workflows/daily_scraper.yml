@@ -171,3 +171,28 @@ jobs:
           path: |
             montco/montco_records.csv
             montco/montco_records.json
+
+  bucks:
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: montco
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - run: pip install requests pytz
+      - run: python bucks/main.py
+        env:
+          CAPTCHA_KEY:       ${{ secrets.CAPTCHA_KEY }}
+          DECODO_PROXY_USER: ${{ secrets.DECODO_PROXY_USER }}
+          DECODO_PROXY_PASS: ${{ secrets.DECODO_PROXY_PASS }}
+          WEBHOOK_URL:       ${{ secrets.WEBHOOK_URL }}
+          PYTHONUNBUFFERED: "1"
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: bucks-output
+          path: |
+            bucks/bucks_records.csv
+            bucks/bucks_records.json
